@@ -8,7 +8,7 @@ import MovieList from '~/components/MovieList';
 const HomeScreen = () =>
 {
   return (
-    <SafeAreaView>
+    <SafeAreaView className='bg-[#ffeff1] h-full' >
 
       <MovieList />
 

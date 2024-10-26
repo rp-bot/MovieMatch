@@ -7,7 +7,9 @@ const PromptLayout = () =>
 {
     return (
         <Stack>
-            <Stack.Screen name="index" options={ { headerTitle: "Prompt", headerShown: false } } />
+            <Stack.Screen name="index" options={ {
+                headerTitle: "Prompt", headerShown: false,
+            } } />
         </Stack>
     );
 };

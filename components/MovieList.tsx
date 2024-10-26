@@ -7,30 +7,82 @@ import Swiper from 'react-native-deck-swiper';
 import { movies } from '../assets/data'; // Ensure the path is correct
 import Animated, { interpolate, interpolateColor, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getRecsBasedOnLikesPOST } from '~/api/routes';
 
 export default function MovieList ()
 {
-    const [ likedCards, setLikedCards ] = useState( [] );
-
+    // const [ likedCards, setLikedCards ] = useState( [] );
     const handleSwipedRight = async ( cardIndex: number ) =>
     {
         const swipedCard = movies[ cardIndex ];
-        const updatedLikedCards = [ ...likedCards, swipedCard ];
 
-        setLikedCards( updatedLikedCards );
-
-        // Store the liked cards in AsyncStorage
         try
         {
-            await AsyncStorage.setItem( 'likedCards', JSON.stringify( updatedLikedCards ) );
-            console.log( 'Stored liked cards in AsyncStorage:', updatedLikedCards );
+            // Fetch existing liked cards from AsyncStorage
+            const storedLikedCards = await AsyncStorage.getItem( 'likedCards' );
+            const likedCardsArray = storedLikedCards ? JSON.parse( storedLikedCards ) : [];
+
+            // Add the new swiped card to the array
+            likedCardsArray.push( swipedCard );
+
+            // Store the updated liked cards array back into AsyncStorage
+            await AsyncStorage.setItem( 'likedCards', JSON.stringify( likedCardsArray ) );
+
+            // console.log( 'Stored liked cards in AsyncStorage:', likedCardsArray );
         } catch ( error )
         {
             console.log( 'Error storing liked cards:', error );
         }
     };
+
+
+    const handleSwipedLeft = async ( cardIndex: number ) =>
+    {
+        const swipedCard = movies[ cardIndex ];
+
+        try
+        {
+            // Fetch existing liked cards from AsyncStorage
+            const storedLikedCards = await AsyncStorage.getItem( 'disLikedCards' );
+            const disliked = storedLikedCards ? JSON.parse( storedLikedCards ) : [];
+
+            // Add the new swiped card to the array
+            disliked.push( swipedCard );
+
+            // Store the updated liked cards array back into AsyncStorage
+            await AsyncStorage.setItem( 'disLikedCards', JSON.stringify( disliked ) );
+
+            // console.log( 'Stored disLiked cards in AsyncStorage:', disliked );
+        } catch ( error )
+        {
+            console.log( 'Error storing disLiked cards:', error );
+        }
+    };
+
+    const sendLikesAndDislikes = async () =>
+    {
+        try
+        {
+            const storeddisLikedCards = await AsyncStorage.getItem( 'disLikedCards' );
+            const disliked = storeddisLikedCards ? JSON.parse( storeddisLikedCards ) : [];
+
+            const storedLikedCards = await AsyncStorage.getItem( 'likedCards' );
+            const likedCardsArray = storedLikedCards ? JSON.parse( storedLikedCards ) : [];
+
+            const movies = [ ...disliked, ...likedCardsArray ].map( item => ( {
+                title: item.title,
+                liked: likedCardsArray.includes( item )
+            } ) );
+            const result = await getRecsBasedOnLikesPOST( movies );
+            console.log( 'Movies:', result );
+        } catch ( error )
+        {
+            console.error( 'Error fetching likes and dislikes:', error );
+        }
+    };
+
     return (
-        <View className='flex-1 '>
+        <View className=''>
 
             <Swiper
                 cards={ movies }
@@ -72,12 +124,10 @@ export default function MovieList ()
                         },
                     },
                 } }
-                onSwipedLeft={ () =>
-                {
-                    console.log( 'Swiped left' );
-                } }
+                onSwipedLeft={ ( cardIndex ) => handleSwipedLeft( cardIndex ) }
                 onSwipedRight={ ( cardIndex ) => handleSwipedRight( cardIndex ) }
                 verticalSwipe={ false }
+                onSwipedAll={ () => sendLikesAndDislikes() }
             />
         </View>
     );
@@ -123,7 +173,7 @@ const styles = StyleSheet.create( {
         shadowOpacity: 0.1,
         shadowRadius: 5,
         elevation: 5,
-        backgroundColor: '#fff',
+        // backgroundColor: '#f08080',
         // padding: 20,
         height: "100%", // Optional to enforce max height
     },

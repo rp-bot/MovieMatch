@@ -3,7 +3,7 @@ import React from "react";
 
 const MainScreen = () =>
 {
-    return <Redirect href="/home" />;
+    return <Redirect href="/prompt" />;
 };
 
 export default MainScreen;
