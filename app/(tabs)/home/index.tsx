@@ -9,9 +9,9 @@ const HomeScreen = () =>
 {
   return (
     <SafeAreaView>
-      <View>
-        <MovieList />
-      </View>
+
+      <MovieList />
+
     </SafeAreaView>
   );
 };
