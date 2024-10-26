@@ -18,7 +18,7 @@ export default function TabLayout ()
           title: 'Home',
           tabBarShowLabel: false,
           headerShown: false,
-          tabBarIcon: ( { color } ) => <Entypo name="home" size={ 24 } color={ color } />,
+          tabBarIcon: ( { color } ) => <Feather name="film" size={ 24 } color={ color } />,
 
         } }
       />

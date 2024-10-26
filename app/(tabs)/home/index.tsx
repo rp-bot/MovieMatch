@@ -1,13 +1,19 @@
 /* eslint-disable prettier/prettier */
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, SafeAreaView, FlatList, StyleSheet } from 'react-native';
+import { movies } from '~/assets/data';
+import MovieList from '~/components/MovieList';
 
-const HomeScreen = () => {
+
+const HomeScreen = () =>
+{
   return (
-    <View>
-      <Text>HomeScreen</Text>
-    </View>
-  )
-}
+    <SafeAreaView>
+      <View>
+        <MovieList />
+      </View>
+    </SafeAreaView>
+  );
+};
 
-export default HomeScreen
+export default HomeScreen;
