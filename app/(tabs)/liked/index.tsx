@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { View, Text, SafeAreaView, ScrollView, RefreshControl, Button, Image } from 'react-native';
+import { View, Text, SafeAreaView, ScrollView, RefreshControl, Button, Image, StyleSheet } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
@@ -13,7 +13,7 @@ const LikedList = () =>
         try
         {
             const storedCards = await AsyncStorage.getItem( 'likedCards' );
-         
+
             if ( storedCards )
             {
                 setLikedCards( JSON.parse( storedCards.replace( /\r?\n|\r/g, '' ) ) );
@@ -73,10 +73,6 @@ const LikedList = () =>
                                 <Text className='text-white text-2xl font-bold'>{ card.title }</Text>
                                 <Text className='text-white text-lg font-semibold'>{ card.duration }</Text>
                                 <Text className='text-white'>{ card.release_year } • { card.vote_average.toFixed( 1 ) } • { card.similarity_score.toFixed( 1 ) * 100 }%</Text>
-
-
-                                <Button title="Delete" onPress={ () => handleDelete( index ) } />
-
                             </View>
 
                         </View>
@@ -88,5 +84,9 @@ const LikedList = () =>
         </SafeAreaView>
     );
 };
+const styles = StyleSheet.create( {
+    btn: {
 
+    }
+} );
 export default LikedList;;

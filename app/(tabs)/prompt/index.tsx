@@ -22,6 +22,12 @@ const Prompt = () =>
         setConvos( [] );
     };
 
+    const handleConvoClick = ( convo ) =>
+    {
+        console.log( convo );
+        setInputText( convo );
+    };
+
     const handleButtonClick = async () =>
     {
         if ( isLoading ) return; // Prevent multiple submissions
@@ -79,26 +85,32 @@ const Prompt = () =>
                     </View>
 
                 </KeyboardAvoidingView>
-                <ScrollView className='bg-zinc-600 w-full '>
-                    <View className=''>
-                        <Text>
-                            conversations:
-                        </Text>
-                        { convos.map( ( convo, index ) => (
-                            <Text key={ index }>
-                                { convo }
+                <ScrollView className='border border-[#fae4e7] border- w-full '>
+                    <View className='p-4 '>
+                        <View className='flex-row justify-between items-center'>
+                            <Text className='text-2xl font-semibold'>
+                                Conversations:
                             </Text>
+                            <Pressable onPress={ deleteData } className="p-2 bg-red-500 rounded-full " disabled={ isLoading }>
+                                { isLoading ? (
+                                    <ActivityIndicator size="small" color="white" />
+                                ) : (
+                                    <Feather name="trash-2" size={ 20 } color="white" />
+                                ) }
+                            </Pressable>
+                        </View>
+
+                        { convos.map( ( convo, index ) => (
+                            <Pressable onPress={ () => handleConvoClick( convo ) } className="p-2 rounded-full " key={ index }>
+                                <Text className=' h-8 overflow-ellipsis'>
+                                    { convo }
+                                </Text>
+                            </Pressable>
                         ) ) }
                     </View>
 
                 </ScrollView>
-                <Pressable onPress={ deleteData } className="p-2 bg-red-500 rounded-full " disabled={ isLoading }>
-                    { isLoading ? (
-                        <ActivityIndicator size="small" color="white" />
-                    ) : (
-                        <Feather name="trash-2" size={ 20 } color="white" />
-                    ) }
-                </Pressable>
+
             </SafeAreaView>
         </TouchableWithoutFeedback>
 

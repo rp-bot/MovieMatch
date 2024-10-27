@@ -185,12 +185,24 @@ export default function MovieList ()
                         <View style={ styles.card }>
                             <Image source={ { uri: "https://image.tmdb.org/t/p/original" + card.backdrop_path } } style={ styles.image }
                                 resizeMode='cover' />
-                            <View style={ styles.textContainer }>
-                                <Text style={ styles.title }>{ card.title }</Text>
-                                <Text style={ styles.details }>{ card.release_year }</Text>
-                                <Text style={ styles.rating }>Rating: { card.vote_average }</Text>
-                                <Text style={ styles.description }>Similarity { card.similarity_score * 100 }%</Text>
-                                <Text style={ styles.duration }>Duration: { card.duration }</Text>
+                            <View className='bg-green-500 rounded-t-xl  p-2  flex-row justify-center items-center'>
+                                <Text className='text-white font-semibold text-lg'>{ card.similarity_score.toFixed( 2 ) * 100 }%</Text>
+                            </View>
+                            <View className='absolute bottom-0 left-0 right-0  p-8 '>
+                                <Text className='text-5xl text-white font-extrabold'>{ card.title }</Text>
+                                <View className='flex-row justify-between w-full'>
+                                    <Text className='text-3xl text-white '>{ card.release_year }
+
+                                    </Text>
+                                    <Text className='text-3xl text-white '>
+                                        { card.duration }
+                                    </Text>
+                                </View>
+
+                                <Text className='text-2xl text-white '>{ card.vote_average.toFixed( 1 ) }/10.0</Text>
+
+
+
                             </View>
                         </View>
                     ) }
