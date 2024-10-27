@@ -1,26 +1,48 @@
 /* eslint-disable prettier/prettier */
+import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { View, Text, SafeAreaView, Button, FlatList, TextInput, StyleSheet, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
-import { useChat } from "@nlxai/chat-react";
-import { useRouter } from 'expo-router';
-import { getRecsBasedOnLikesPOST } from '~/api/routes';
+import { View, Text, SafeAreaView, Button, FlatList, TextInput, StyleSheet, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Pressable, ActivityIndicator, ScrollView } from 'react-native';
+import { getRecsOffFreePOST } from '~/api/routes';
 const Prompt = () =>
 {
     const [ inputText, setInputText ] = useState( '' );
-    // const [ storedText, setStoredText ] = useState( '' );
-    const router = useRouter();
+    const [ storedText, setStoredText ] = useState( '' );
+    const [ inputHeight, setInputHeight ] = useState( 40 );
+    const [ isLoading, setIsLoading ] = useState( false );
+    const [ convos, setConvos ] = useState( [] );
+
+    const deleteData = async () =>
+    {
+        console.log( "emptying data" );
+        await AsyncStorage.setItem( 'recommendations', '' );
+        await AsyncStorage.setItem( 'likedCards', '' );
+        await AsyncStorage.setItem( 'disLikedCards', '' );
+        setConvos( [] );
+    };
 
     const handleButtonClick = async () =>
     {
-        // setStoredText( inputText );
+        if ( isLoading ) return; // Prevent multiple submissions
+        setIsLoading( true );
         try
         {
-            const result = await getRecsBasedOnLikesPOST( inputText );
-            console.log( 'API Response:', result );
+            setInputText( '' );
+            setConvos( prevArray => [ ...prevArray, inputText ] );
+            console.log( inputText );
+            const result = await getRecsOffFreePOST( inputText );
+            const { recommendations } = result;
+            await AsyncStorage.setItem( 'recommendations', JSON.stringify( recommendations ) );
+            console.log( 'Recommendations saved to AsyncStorage' );
+            // console.log( 'API Response:', recommendations );
+            router.push( '/home' );
         } catch ( error )
         {
-
             console.error( 'Error:', error );
+        } finally
+        {
+            setIsLoading( false );
         }
     };
 
@@ -30,20 +52,53 @@ const Prompt = () =>
             <SafeAreaView className='bg-[#ffeff1] h-full flex justify-center items-center ' >
                 <KeyboardAvoidingView behavior={ Platform.OS === 'ios' ? 'padding' : 'height' }
                     style={ styles.container }>
-                    <View>
-                        <Text className='self-start text-5xl font-extrabold' >
+                    <View className='flex-col justify-center items-center gap-10'>
+                        <Text className='flex-0 self-start text-5xl font-extrabold' >
                             What do you feel like watching today?
                         </Text>
-                        <TextInput
-                            style={ styles.input }
-                            placeholder="Type something..."
-                            value={ inputText }
-                            onChangeText={ setInputText }
-                        />
-                        <Button title="Save" onPress={ handleButtonClick } />
-                        {/* { storedText ? <Text style={ styles.storedText }>Stored: { storedText }</Text> : null } */}
+                        <View className='flex-row items-center space-x-2 justify-center gap-2'>
+                            <TextInput
+                                className='flex-1 border border-gray-300 rounded-lg p-2 pt-3'
+                                placeholder="Talk to me"
+                                value={ inputText }
+                                onChangeText={ setInputText }
+                                multiline
+                                onContentSizeChange={ ( event ) => setInputHeight( event.nativeEvent.contentSize.height ) }
+                                style={ { height: Math.max( 40, inputHeight ) } }
+                            />
+                            <Pressable onPress={ handleButtonClick } className="p-2 bg-zinc-950 rounded-full " disabled={ isLoading }>
+                                { isLoading ? (
+                                    <ActivityIndicator size="small" color="white" />
+                                ) : (
+                                    <Feather name="arrow-up" size={ 20 } color="white" />
+                                ) }
+                            </Pressable>
+                            {/* { storedText ? <Text style={ styles.storedText }>Stored: { storedText }</Text> : null } */ }
+                        </View>
+
                     </View>
+
                 </KeyboardAvoidingView>
+                <ScrollView className='bg-zinc-600 w-full '>
+                    <View className=''>
+                        <Text>
+                            conversations:
+                        </Text>
+                        { convos.map( ( convo, index ) => (
+                            <Text key={ index }>
+                                { convo }
+                            </Text>
+                        ) ) }
+                    </View>
+
+                </ScrollView>
+                <Pressable onPress={ deleteData } className="p-2 bg-red-500 rounded-full " disabled={ isLoading }>
+                    { isLoading ? (
+                        <ActivityIndicator size="small" color="white" />
+                    ) : (
+                        <Feather name="trash-2" size={ 20 } color="white" />
+                    ) }
+                </Pressable>
             </SafeAreaView>
         </TouchableWithoutFeedback>
 

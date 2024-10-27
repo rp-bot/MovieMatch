@@ -1,18 +1,83 @@
 /* eslint-disable prettier/prettier */
 // eslint-disable-next-line prettier/prettier
-import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import Swiper from 'react-native-deck-swiper';
 
-import { movies } from '../assets/data'; // Ensure the path is correct
+// import { movies } from '../assets/data'; // Ensure the path is correct
 import Animated, { interpolate, interpolateColor, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getRecsBasedOnLikesPOST } from '~/api/routes';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function MovieList ()
 {
+    const [ movies, setMovies ] = useState( [] );
+    const [ loading, setLoading ] = useState( true );
+    const [ counter, setCounter ] = useState( 0 );
+    const [ trigger, setTrigger ] = useState( true );
+    const [ refreshKey, setRefreshKey ] = useState( 0 );
+    const [ refreshing, setRefreshing ] = useState( false );
+
+    const onRefresh = async () =>
+    {
+        setRefreshing( true );
+        setMovies( [] );
+        setRefreshing( false );
+    };
+
+    useFocusEffect(
+        useCallback( () =>
+        {
+            // setMovies( [] );
+            const fetchRecommendations = async () =>
+            {
+                try
+                {
+                    const storedRecommendations = await AsyncStorage.getItem( 'recommendations' );
+                    console.log( 'getting recs: ', storedRecommendations );
+
+                    if ( storedRecommendations )
+                    {
+                        setMovies( JSON.parse( storedRecommendations ) );
+                        console.log( 'the movies', movies );
+                        setTrigger( false );
+                    }
+
+                    if ( movies.length > 0 )
+                    {
+                        console.log( 'movies num ', movies.length );
+                        setLoading( false );
+                        setTrigger( false );
+                    }
+                } catch ( error )
+                {
+                    console.log( 'Error fetching recommendations:', error );
+                    setLoading( false );
+                    setTrigger( false );
+                }
+            };
+
+            if ( trigger )
+            {
+                console.log( 'triggered' );
+                fetchRecommendations();
+                setTrigger( false ); // Reset to prevent retriggering the fetch
+            }
+
+            console.log( 'fetching again' );
+            fetchRecommendations();
+
+            // Optional cleanup function if needed
+            return () =>
+            {
+                // Cleanup code here if necessary
+            };
+        }, [ trigger, movies.length ] )
+    );
+
     // const [ likedCards, setLikedCards ] = useState( [] );
-    const handleSwipedRight = async ( cardIndex: number ) =>
+    const handleSwipedRight = async ( cardIndex ) =>
     {
         const swipedCard = movies[ cardIndex ];
 
@@ -20,7 +85,7 @@ export default function MovieList ()
         {
             // Fetch existing liked cards from AsyncStorage
             const storedLikedCards = await AsyncStorage.getItem( 'likedCards' );
-            const likedCardsArray = storedLikedCards ? JSON.parse( storedLikedCards ) : [];
+            const likedCardsArray = storedLikedCards ? JSON.parse( storedLikedCards.replace( /\r?\n|\r/g, '' ) ) : [];
 
             // Add the new swiped card to the array
             likedCardsArray.push( swipedCard );
@@ -28,110 +93,140 @@ export default function MovieList ()
             // Store the updated liked cards array back into AsyncStorage
             await AsyncStorage.setItem( 'likedCards', JSON.stringify( likedCardsArray ) );
 
-            // console.log( 'Stored liked cards in AsyncStorage:', likedCardsArray );
+
+
+
         } catch ( error )
         {
             console.log( 'Error storing liked cards:', error );
         }
     };
 
-
-    const handleSwipedLeft = async ( cardIndex: number ) =>
+    const handleSwipedLeft = async ( cardIndex ) =>
     {
+
         const swipedCard = movies[ cardIndex ];
 
         try
         {
-            // Fetch existing liked cards from AsyncStorage
-            const storedLikedCards = await AsyncStorage.getItem( 'disLikedCards' );
-            const disliked = storedLikedCards ? JSON.parse( storedLikedCards ) : [];
+            // Fetch existing disliked cards from AsyncStorage
+            const storedDislikedCards = await AsyncStorage.getItem( 'disLikedCards' );
+            const disliked = storedDislikedCards ? JSON.parse( storedDislikedCards.replace( /\r?\n|\r/g, '' ) ) : [];
 
             // Add the new swiped card to the array
             disliked.push( swipedCard );
 
-            // Store the updated liked cards array back into AsyncStorage
+            // Store the updated disliked cards array back into AsyncStorage
             await AsyncStorage.setItem( 'disLikedCards', JSON.stringify( disliked ) );
 
-            // console.log( 'Stored disLiked cards in AsyncStorage:', disliked );
         } catch ( error )
         {
-            console.log( 'Error storing disLiked cards:', error );
+            console.log( 'Error storing disliked cards:', error );
         }
     };
 
-    const sendLikesAndDislikes = async () =>
-    {
-        try
-        {
-            const storeddisLikedCards = await AsyncStorage.getItem( 'disLikedCards' );
-            const disliked = storeddisLikedCards ? JSON.parse( storeddisLikedCards ) : [];
+    // const sendLikesAndDislikes = async () =>
+    // {
 
-            const storedLikedCards = await AsyncStorage.getItem( 'likedCards' );
-            const likedCardsArray = storedLikedCards ? JSON.parse( storedLikedCards ) : [];
+    //     try
+    //     {
+    //         let result = [];
 
-            const movies = [ ...disliked, ...likedCardsArray ].map( item => ( {
-                title: item.title,
-                liked: likedCardsArray.includes( item )
-            } ) );
-            const result = await getRecsBasedOnLikesPOST( movies );
-            console.log( 'Movies:', result );
-        } catch ( error )
-        {
-            console.error( 'Error fetching likes and dislikes:', error );
-        }
-    };
+    //         const storeddisLikedCards = await AsyncStorage.getItem( 'disLikedCards' );
+    //         console.log( storeddisLikedCards );
+    //         const disliked = storeddisLikedCards ? JSON.parse( storeddisLikedCards.replace( /\r?\n|\r/g, '' ) ) : [];
+
+    //         const storedLikedCards = await AsyncStorage.getItem( 'likedCards' );
+    //         const likedCardsArray = storedLikedCards ? JSON.parse( storedLikedCards.replace( /\r?\n|\r/g, '' ) ) : [];
+
+    //         const Segregated_movies = [ ...disliked, ...likedCardsArray ].map( item => ( {
+    //             title: item.title,
+    //             liked: likedCardsArray.includes( item )
+    //         } ) );
+    //         console.log( "sending data to get recs" );
+
+    //         result = await getRecsBasedOnLikesPOST( Segregated_movies );
+
+    //         console.log( "got the recs" );
+    //         console.log( "number of movies in stakc ", movies.length );
+    //         const storedMovieRecs = await AsyncStorage.getItem( 'recommendations_shadow' );
+    //         const storedMovieRecs_array = storedMovieRecs ? JSON.parse( storedMovieRecs.replace( /\r?\n|\r/g, '' ) ) : [];
+    //         const concated_array = storedMovieRecs_array.concat( result );
+    //         await AsyncStorage.setItem( 'recommendations_shadow', JSON.stringify( concated_array ) );
+
+    //         if ( movies.length === 0 )
+    //         {
+    //             setLoading( true );
+    //             setTrigger( true );
+    //             await AsyncStorage.setItem( 'recommendations', '' );
+    //             await AsyncStorage.setItem( 'recommendations', JSON.stringify( concated_array ) );
+    //             await AsyncStorage.setItem( 'recommendations_shadow', JSON.stringify( [] ) );
+
+    //             setMovies( JSON.parse( concated_array.replace( /\r?\n|\r/g, '' ) ) );
+
+    //         }
+
+    //         console.log( 'Movies:', result );
+    //     } catch ( error )
+    //     {
+    //         console.error( 'Error fetching likes and dislikes:', error );
+    //     }
+    // };
 
     return (
         <View className=''>
-
-            <Swiper
-                cards={ movies }
-                renderCard={ ( card ) => (
-                    <View style={ styles.card }>
-                        <Image source={ { uri: card.imageUrl } } style={ styles.image }
-                            resizeMode='cover' />
-                        <View style={ styles.textContainer }>
-                            <Text style={ styles.title }>{ card.title }</Text>
-                            <Text style={ styles.details }>{ card.genre } • { card.releaseYear }</Text>
-                            <Text style={ styles.rating }>Rating: { card.rating }</Text>
-                            <Text style={ styles.description }>{ card.description }</Text>
-                            <Text style={ styles.duration }>Duration: { card.duration }</Text>
+            { loading ? ( <ActivityIndicator size="large" color="#0000ff" />
+            ) : movies.length === 0 ? (
+                <Text>No recommendations available</Text>
+            ) : (
+                <Swiper
+                    cards={ movies }
+                    renderCard={ ( card ) => (
+                        <View style={ styles.card }>
+                            <Image source={ { uri: "https://image.tmdb.org/t/p/original" + card.backdrop_path } } style={ styles.image }
+                                resizeMode='cover' />
+                            <View style={ styles.textContainer }>
+                                <Text style={ styles.title }>{ card.title }</Text>
+                                <Text style={ styles.details }>{ card.release_year }</Text>
+                                <Text style={ styles.rating }>Rating: { card.vote_average }</Text>
+                                <Text style={ styles.description }>Similarity { card.similarity_score * 100 }%</Text>
+                                <Text style={ styles.duration }>Duration: { card.duration }</Text>
+                            </View>
                         </View>
-                    </View>
-                ) }
-                stackSize={ 2 }
-                cardIndex={ 0 }
+                    ) }
+                    stackSize={ 2 }
+                    cardIndex={ 0 }
 
 
-                backgroundColor="transparent" // Adjust background color
-                containerStyle={ styles.containerStyle } // Apply container styles
-                cardHorizontalMargin={ 20 } // Adjust horizontal margin between cards
-                cardVerticalMargin={ 0 } // Adjust vertical margin between cards
-                cardStyle={ styles.cardStyle }
-                animateOverlayLabelsOpacity
-                animateCardOpacity
-                overlayLabels={ {
-                    left: {
-                        title: 'NOPE',
-                        style: {
-                            label: styles.overlayLabelLeft,
+                    backgroundColor="transparent" // Adjust background color
+                    containerStyle={ styles.containerStyle } // Apply container styles
+                    cardHorizontalMargin={ 20 } // Adjust horizontal margin between cards
+                    cardVerticalMargin={ 0 } // Adjust vertical margin between cards
+                    cardStyle={ styles.cardStyle }
+                    animateOverlayLabelsOpacity
+                    animateCardOpacity
+                    overlayLabels={ {
+                        left: {
+                            title: 'NOPE',
+                            style: {
+                                label: styles.overlayLabelLeft,
+                            },
                         },
-                    },
-                    right: {
-                        title: 'LIKE',
-                        style: {
-                            label: styles.overlayLabelRight,
+                        right: {
+                            title: 'LIKE',
+                            style: {
+                                label: styles.overlayLabelRight,
+                            },
                         },
-                    },
-                } }
-                onSwipedLeft={ ( cardIndex ) => handleSwipedLeft( cardIndex ) }
-                onSwipedRight={ ( cardIndex ) => handleSwipedRight( cardIndex ) }
-                verticalSwipe={ false }
-                onSwipedAll={ () => sendLikesAndDislikes() }
-            />
+                    } }
+                    onSwipedLeft={ ( cardIndex ) => handleSwipedLeft( cardIndex ) }
+                    onSwipedRight={ ( cardIndex ) => handleSwipedRight( cardIndex ) }
+                    verticalSwipe={ false }
+                // onSwipedAll={ () => sendLikesAndDislikes() }
+                /> ) }
         </View>
     );
-}
+};
 
 
 
